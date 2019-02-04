@@ -15,11 +15,9 @@ import socket
 import time
 import os
 import sys
+import signal
 from BaseHTTPServer import BaseHTTPRequestHandler
 from BaseHTTPServer import HTTPServer
-
-# this determines the Focus to AlertAPI urgency mapping
-focus_2_urgency = {1: 1, 2: 1, 3: 2, 4: 3}
 
 # Some logging systems like stackdriver distinguish between stdout and stderr
 def loginfo(msg):
@@ -27,6 +25,16 @@ def loginfo(msg):
 
 def logerror(msg):
     sys.stderr.write('am2alertapi error: {0}\n'.format(msg))
+
+def cleanexit(signum, frame):
+    loginfo('shutting down')
+    sys.exit()
+
+signal.signal(signal.SIGTERM, cleanexit)
+signal.signal(signal.SIGINT, cleanexit)
+
+# this determines the Focus to AlertAPI urgency mapping
+focus_2_urgency = {1: 1, 2: 1, 3: 2, 4: 3}
 
 if not 'ALERTAPI_TOKEN' in os.environ:
     logerror('environment ALERTAPI_TOKEN not set')
@@ -107,7 +115,7 @@ if __name__ == '__main__':
         
     try:
         httpd.serve_forever()
-    except:
-        loginfo('shutting down')
-        sys.exit()
+    except Exception as err:
+        logerror('exception encountered: {0}'.format(err))
+        sys.exit(1)
 

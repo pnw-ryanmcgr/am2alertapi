@@ -19,6 +19,9 @@ import signal
 from BaseHTTPServer import BaseHTTPRequestHandler
 from BaseHTTPServer import HTTPServer
 
+# unbuffer stdout for timely logs
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+
 # Some logging systems like stackdriver distinguish between stdout and stderr
 def loginfo(msg):
     sys.stdout.write('am2alertapi info: {0}\n'.format(msg))
@@ -106,6 +109,10 @@ class TransHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
 if __name__ == '__main__':
+    loginfo('config endpoint="{0}"'.format(endpoint))
+    loginfo('config token="{0}"'.format("*" * len(token)))
+    loginfo('config org="{0}"'.format(organization))
+
     try:
         httpd = HTTPServer((bindto, 3080), TransHandler)
     except Exception as err:

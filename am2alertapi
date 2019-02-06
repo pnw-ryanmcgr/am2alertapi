@@ -53,7 +53,7 @@ if not 'ALERT_ORGANIZATION' in os.environ:
 
 token = os.environ['ALERTAPI_TOKEN']
 endpoint = os.environ['ALERTAPI_ENDPOINT']
-organization = os.environ['ALERT_ORGANIZATION']
+ci_organization = os.environ['ALERT_ORGANIZATION']
 bindto = ''
 if 'BIND_ADDR' in os.environ:
     bindto = os.environ['BIND_ADDR']
@@ -66,14 +66,16 @@ def translate(amalert):
         result['component'] = {}
         result['message'] = ''
         
-        # If labels.ci not specified ci.name is hostname
+        # If labels.ci_name not specified ci.name is hostname
         if alert['labels'].get('hostname'):
             result['ci']['name'] = alert['labels']['hostname']
-        if alert['labels'].get('ci'):
-            result['ci']['name'] = alert['labels']['ci']
-        result['ci']['organization'] = 'UW-IT'
+        if alert['labels'].get('ci_name'):
+            result['ci']['name'] = alert['labels']['ci_name']
+        if alert['labels'].get('ci_sysid'):
+            result['ci']['sysid'] = alert['labels']['ci_sysid']
+        result['ci']['organization'] = ci_organization
+
         result['component']['name'] = alert['labels']['alertname']
-        
         result['title'] = alert['annotations']['summary']
         prom_url = alert['generatorURL']
         result['message'] = '{}\n\nsource: {}'.format(

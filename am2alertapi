@@ -113,7 +113,7 @@ class TransHandler(BaseHTTPRequestHandler):
 if __name__ == '__main__':
     loginfo('config endpoint="{0}"'.format(endpoint))
     loginfo('config token="{0}"'.format("*" * len(token)))
-    loginfo('config org="{0}"'.format(organization))
+    loginfo('config org="{0}"'.format(ci_organization))
 
     try:
         httpd = HTTPServer((bindto, 3080), TransHandler)

@@ -13,6 +13,7 @@ import json
 import requests
 import socket
 import time
+import random
 import os
 import sys
 import signal
@@ -104,6 +105,7 @@ class TransHandler(BaseHTTPRequestHandler):
         headers = {'Authorization': 'Bearer {0}'.format(token)}
         for alert in alerts:
             json_alert = json.dumps(alert)
+            time.sleep(random.uniform(1,10000)/1000)
             api_response = requests.post(endpoint, headers=headers, data=json_alert)
             loginfo('{}:{} urgency {} return_code {}'.format(alert['ci']['name'], alert[
                         'component']['name'], alert['urgency'], api_response.status_code))

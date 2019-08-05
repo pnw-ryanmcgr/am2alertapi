@@ -9,6 +9,7 @@
 #  ALERT_ORGANIZATION - Service Now Organization Name
 #  BIND_ADDR - Optional. 0.0.0.0 is default 
 
+from flask import Flask, request
 import json
 import requests
 import socket
@@ -17,8 +18,6 @@ import random
 import os
 import sys
 import signal
-from BaseHTTPServer import BaseHTTPRequestHandler
-from BaseHTTPServer import HTTPServer
 
 # unbuffer stdout for timely logs
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
@@ -52,12 +51,18 @@ if not 'ALERT_ORGANIZATION' in os.environ:
     logerror('environment ALERT_ORGANIZATION not set')
     sys.exit(1)
 
+app = Flask(__name__)
+
 token = os.environ['ALERTAPI_TOKEN']
 endpoint = os.environ['ALERTAPI_ENDPOINT']
 ci_organization = os.environ['ALERT_ORGANIZATION']
 bindto = ''
 if 'BIND_ADDR' in os.environ:
     bindto = os.environ['BIND_ADDR']
+
+loginfo('config endpoint="{0}"'.format(endpoint))
+loginfo('config token="{0}"'.format("*" * len(token)))
+loginfo('config org="{0}"'.format(ci_organization))
 
 def translate(amalert):
     results = []
@@ -93,24 +98,40 @@ def translate(amalert):
         results.append(result)
     return results
 
-class TransHandler(BaseHTTPRequestHandler):
+@app.route('/', methods=['POST'])
+def alert():
+## old
+    data = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+    alerts = translate(data)
+    headers = {'Authorization': 'Bearer {0}'.format(token)}
+    for alert in alerts:
+        json_alert = json.dumps(alert)
+        time.sleep(random.uniform(1,10000)/1000)
+        api_response = requests.post(endpoint, headers=headers, data=json_alert)
+        loginfo('{}:{} urgency {} return_code {}'.format(alert['ci']['name'], alert[
+                    'component']['name'], alert['urgency'], api_response.status_code))
+    self.send_response(api_response.status_code)
+    self.end_headers()
 
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
+## new
+    data = get_json(force=True, silent=False, cache=True)
+    alerts = translate(data)
+    headers = {'Authorization': 'Bearer {0}'.format(token)}
+    for alert in alerts:
+        json_alert = json.dumps(alert)
+        time.sleep(random.uniform(1,10000)/1000)
+        api_response = requests.post(endpoint, headers=headers, data=json_alert)
+        loginfo('{}:{} urgency {} return_code {}'.format(alert['ci']['name'], alert[
+                    'component']['name'], alert['urgency'], api_response.status_code))
 
-    def do_POST(self):
-        data = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
-        alerts = translate(data)
-        headers = {'Authorization': 'Bearer {0}'.format(token)}
-        for alert in alerts:
-            json_alert = json.dumps(alert)
-            time.sleep(random.uniform(1,10000)/1000)
-            api_response = requests.post(endpoint, headers=headers, data=json_alert)
-            loginfo('{}:{} urgency {} return_code {}'.format(alert['ci']['name'], alert[
-                        'component']['name'], alert['urgency'], api_response.status_code))
-        self.send_response(api_response.status_code)
-        self.end_headers()
+    return Response(status=api_response.status_code)
+
+
+@app.route('/healthz')
+def healthz():
+    """Return a 200 illustrating responsiveness."""
+    return '''
+
 
 if __name__ == '__main__':
     loginfo('config endpoint="{0}"'.format(endpoint))

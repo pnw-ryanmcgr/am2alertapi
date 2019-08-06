@@ -9,7 +9,7 @@
 #  ALERT_ORGANIZATION - Service Now Organization Name
 #  BIND_ADDR - Optional. 0.0.0.0 is default 
 
-from flask import Flask, request
+from flask import Flask, Response, request, abort, jsonify
 import json
 import requests
 import socket
@@ -20,7 +20,7 @@ import sys
 import signal
 
 # unbuffer stdout for timely logs
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+#sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 # Some logging systems like stackdriver distinguish between stdout and stderr
 def loginfo(msg):
@@ -66,57 +66,52 @@ loginfo('config org="{0}"'.format(ci_organization))
 
 def translate(amalert):
     results = []
-    for alert in amalert['alerts']:
-        result = {}
-        result['ci'] = {}
-        result['component'] = {}
-        result['message'] = ''
-        
-        # If labels.ci_name not specified ci.name is hostname
-        if alert['labels'].get('hostname'):
-            result['ci']['name'] = alert['labels']['hostname']
-        if alert['labels'].get('ci_name'):
-            result['ci']['name'] = alert['labels']['ci_name']
-        if alert['labels'].get('ci_sysid'):
-            result['ci']['sysid'] = alert['labels']['ci_sysid']
-        result['ci']['organization'] = ci_organization
+    try:
+        for alert in amalert['alerts']:
+            result = {}
+            result['ci'] = {}
+            result['component'] = {}
+            result['message'] = ''
+            result['ci']['organization'] = ci_organization
 
-        result['component']['name'] = alert['labels']['alertname']
-        result['title'] = alert['annotations']['summary']
-        prom_url = alert['generatorURL']
-        result['message'] = '{}\n\nsource: {}'.format(
-            alert['annotations']['description'], prom_url)
+            # Heirarchy of ci selection
+            if alert['labels'].get('hostname'):
+                result['ci']['name'] = alert['labels']['hostname']
+            if alert['labels'].get('ci_name'):
+                result['ci']['name'] = alert['labels']['ci_name']
+            if alert['labels'].get('ci_sysid'):
+                result['ci']['sysid'] = alert['labels']['ci_sysid']
 
-        if alert['labels'].get('kba'):
-            result['kba'] = {'number': alert['labels']['kba']}
+            result['component']['name'] = alert['labels']['alertname']
+            result['title'] = alert['annotations']['summary']
+            prom_url = alert['generatorURL']
+            result['message'] = '{}\n\nsource: {}'.format(
+                alert['annotations']['description'], prom_url)
 
-        if alert['status'] == 'firing':
-            result['urgency'] = focus_2_urgency[int(alert['labels']['focus'])]
-        else:
-            result['urgency'] = 'OK'
+            if alert['labels'].get('kba'):
+                result['kba'] = {'number': alert['labels']['kba']}
 
-        results.append(result)
+            if alert['status'] == 'firing':
+                result['urgency'] = focus_2_urgency[int(alert['labels']['focus'])]
+            else:
+                result['urgency'] = 'OK'
+
+            results.append(result)
+
+    except LookupError as e:
+        logerror("Alert input missing required labels/annotations/attributes: {}".format(e))
+        abort(406, description="Missing required labels/annotations/attributes {}".format(e))
+
     return results
+
 
 @app.route('/', methods=['POST'])
 def alert():
-## old
-    data = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
-    alerts = translate(data)
+    """Submit posted alertmanager alerts to UW alertAPI"""
     headers = {'Authorization': 'Bearer {0}'.format(token)}
-    for alert in alerts:
-        json_alert = json.dumps(alert)
-        time.sleep(random.uniform(1,10000)/1000)
-        api_response = requests.post(endpoint, headers=headers, data=json_alert)
-        loginfo('{}:{} urgency {} return_code {}'.format(alert['ci']['name'], alert[
-                    'component']['name'], alert['urgency'], api_response.status_code))
-    self.send_response(api_response.status_code)
-    self.end_headers()
 
-## new
-    data = get_json(force=True, silent=False, cache=True)
-    alerts = translate(data)
-    headers = {'Authorization': 'Bearer {0}'.format(token)}
+    data = request.get_json(force=True, silent=False, cache=True)
+    alerts = translate(data)    
     for alert in alerts:
         json_alert = json.dumps(alert)
         time.sleep(random.uniform(1,10000)/1000)
@@ -127,27 +122,26 @@ def alert():
     return Response(status=api_response.status_code)
 
 
+@app.route('/watchdog', methods=['POST'])
+def watchdog():
+    """Maintain a watchdog using UW alertAPI keepalive.
+       Each call to watchdog resets the time out timer."""
+    headers = {'Authorization': 'Bearer {0}'.format(token)}
+    
+    data = get_json(force=True, silent=False, cache=True)
+    alerts = translate(data)
+
+    # if alerts no have timeout abort()
+    for alert in alerts:
+        json_alert = json.dumps(alert)
+        api_response = requests.post(endpoint, headers=headers, data=json_alert)
+        loginfo('{}:{} urgency {} return_code {}'.format(alert['ci']['name'], alert[
+                    'component']['name'], alert['urgency'], api_response.status_code))
+
+    return Response(status=api_response.status_code)
+
+
 @app.route('/healthz')
 def healthz():
     """Return a 200 illustrating responsiveness."""
-    return '''
-
-
-if __name__ == '__main__':
-    loginfo('config endpoint="{0}"'.format(endpoint))
-    loginfo('config token="{0}"'.format("*" * len(token)))
-    loginfo('config org="{0}"'.format(ci_organization))
-
-    try:
-        httpd = HTTPServer((bindto, 3080), TransHandler)
-    except Exception as err:
-        logerror('exception initializing: {0}'.format(err))
-        sys.exit(1)
-    loginfo('initialized and running')
-        
-    try:
-        httpd.serve_forever()
-    except Exception as err:
-        logerror('exception encountered: {0}'.format(err))
-        sys.exit(1)
-
+    return Response(status=200)

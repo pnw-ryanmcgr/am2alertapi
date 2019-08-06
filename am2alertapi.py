@@ -19,15 +19,12 @@ import os
 import sys
 import signal
 
-# unbuffer stdout for timely logs
-#sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-
 # Some logging systems like stackdriver distinguish between stdout and stderr
 def loginfo(msg):
-    sys.stdout.write('am2alertapi info: {0}\n'.format(msg))
+    print('am2alertapi info: {0}\n'.format(msg), file=sys.stdout, flush=True )
 
 def logerror(msg):
-    sys.stderr.write('am2alertapi error: {0}\n'.format(msg))
+    print('am2alertapi error: {0}\n'.format(msg), file=sys.stderr, flush=True)
 
 def cleanexit(signum, frame):
     loginfo('shutting down')

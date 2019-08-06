@@ -5,7 +5,7 @@
 
 # All options via environment variables
 #  ALERTAPI_TOKEN - token for AlertAPI access
-#  ALERTAPI_ENDPOINT - full URL for AlertAPI
+#  ALERTAPI_URL - URL for AlertAPI, not including path
 #  ALERT_ORGANIZATION - Service Now Organization Name
 #  BIND_ADDR - Optional. 0.0.0.0 is default 
 
@@ -40,26 +40,30 @@ if not 'ALERTAPI_TOKEN' in os.environ:
     logerror('environment ALERTAPI_TOKEN not set')
     sys.exit(1)
 
-if not 'ALERTAPI_ENDPOINT' in os.environ:
-    logerror('environment ALERTAPI_ENDPOINT not set')
+if not 'ALERTAPI_URL' in os.environ:
+    logerror('environment ALERTAPI_URL not set')
     sys.exit(1)
 
 if not 'ALERT_ORGANIZATION' in os.environ:
     logerror('environment ALERT_ORGANIZATION not set')
     sys.exit(1)
 
-app = Flask(__name__)
-
-token = os.environ['ALERTAPI_TOKEN']
-endpoint = os.environ['ALERTAPI_ENDPOINT']
 ci_organization = os.environ['ALERT_ORGANIZATION']
+token = os.environ['ALERTAPI_TOKEN']
+api_url = os.environ['ALERTAPI_URL']
+alert_endpoint = api_url + 'alert'
+keepalive_endpoint = api_url + 'keepalive'
 bindto = ''
 if 'BIND_ADDR' in os.environ:
     bindto = os.environ['BIND_ADDR']
 
-loginfo('config endpoint="{0}"'.format(endpoint))
+loginfo('config url="{0}"'.format(api_url))
+loginfo('config alert_endpoint="{0}"'.format(alert_endpoint))
+loginfo('config keepalive_endpoint="{0}"'.format(keepalive_endpoint))
 loginfo('config token="{0}"'.format("*" * len(token)))
 loginfo('config org="{0}"'.format(ci_organization))
+
+app = Flask(__name__)
 
 def translate(amalert):
     results = []
@@ -93,6 +97,9 @@ def translate(amalert):
             else:
                 result['urgency'] = 'OK'
 
+            if alert['labels'].get('watchdog_timeout'):
+                result['timeout'] = alert['labels']['watchdog_timeout']
+
             results.append(result)
 
     except LookupError as e:
@@ -112,8 +119,8 @@ def alert():
     for alert in alerts:
         json_alert = json.dumps(alert)
         time.sleep(random.uniform(1,10000)/1000)
-        api_response = requests.post(endpoint, headers=headers, data=json_alert)
-        loginfo('{}:{} urgency {} return_code {}'.format(alert['ci']['name'], alert[
+        api_response = requests.post(alert_endpoint, headers=headers, data=json_alert)
+        loginfo('alert {}:{} urgency {} return_code {}'.format(alert['ci']['name'], alert[
                     'component']['name'], alert['urgency'], api_response.status_code))
 
     return Response(status=api_response.status_code)
@@ -121,19 +128,24 @@ def alert():
 
 @app.route('/watchdog', methods=['POST'])
 def watchdog():
-    """Maintain a watchdog using UW alertAPI keepalive.
-       Each call to watchdog resets the time out timer."""
+    """A watchdog using UW alertAPI keepalive.
+
+    Watchdog expects a firing alert at a regular interval
+    and will call alertAPI when the firing alert is missing.
+    Contact must be made before the value of the label
+    watchdog_timeout, which defaults to 5 minutes.
+    """
     headers = {'Authorization': 'Bearer {0}'.format(token)}
     
     data = get_json(force=True, silent=False, cache=True)
     alerts = translate(data)
-
-    # if alerts no have timeout abort()
     for alert in alerts:
+        if not alert.get('timeout'):
+            alert['timeout'] = 5
         json_alert = json.dumps(alert)
-        api_response = requests.post(endpoint, headers=headers, data=json_alert)
-        loginfo('{}:{} urgency {} return_code {}'.format(alert['ci']['name'], alert[
-                    'component']['name'], alert['urgency'], api_response.status_code))
+        api_response = requests.post(keepalive_endpoint, headers=headers, data=json_alert)
+        loginfo('keepalive {}:{} urgency {} timeout {} return_code {}'.format(alert['ci']['name'], alert[
+                    'component']['name'], alert['urgency'], alert['timeout'], api_response.status_code))
 
     return Response(status=api_response.status_code)
 

@@ -1,0 +1,9 @@
+export VIRTUAL_ENV=`pwd`/env
+export PATH=`pwd`/env/bin:$PATH
+#export ALERTAPI_TOKEN=36c19784b81548d3ae9ddf1b0eb77a19
+export ALERTAPI_TOKEN=a35546df241140a687200bec8c6812c0
+export ALERTAPI_ENDPOINT=https://api.alerts-test.s.uw.edu/v1/alert
+export ALERT_ORGANIZATION="UW-IT"
+
+pip install -r requirements.txt
+python3 -m flask run

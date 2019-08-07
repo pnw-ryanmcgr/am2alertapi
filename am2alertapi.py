@@ -50,9 +50,9 @@ if not 'ALERT_ORGANIZATION' in os.environ:
 
 ci_organization = os.environ['ALERT_ORGANIZATION']
 token = os.environ['ALERTAPI_TOKEN']
-api_url = os.environ['ALERTAPI_URL']
-alert_endpoint = api_url + 'alert'
-keepalive_endpoint = api_url + 'keepalive'
+api_url = os.environ['ALERTAPI_URL'].rstrip('/')
+alert_endpoint = api_url + '/v1/alert'
+keepalive_endpoint = api_url + '/v1/keepalive'
 bindto = ''
 if 'BIND_ADDR' in os.environ:
     bindto = os.environ['BIND_ADDR']

@@ -137,7 +137,7 @@ def watchdog():
     """
     headers = {'Authorization': 'Bearer {0}'.format(token)}
     
-    data = get_json(force=True, silent=False, cache=True)
+    data = request.get_json(force=True, silent=False, cache=True)
     alerts = translate(data)
     for alert in alerts:
         if not alert.get('timeout'):

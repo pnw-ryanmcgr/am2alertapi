@@ -19,4 +19,11 @@ returns 400
 curl -vv -H "Content-Type: application/json" --data "@alertmanager-alert-bad-label.json" -XPOST http://localhost:5000/
 returns 406
 
+# Watchdog (will create INC after timeout)
+curl -vv -H "Content-Type: application/json" --data "@alertmanager-alert-watchdog.json" -XPOST http://localhost:5000/watchdog
+returns 202, will create INC after timeout
 
+# Clear keepalive with
+curl -v -XDELETE -H "Authorization: Bearer a35546df241140a687200bec8c6812c0" https://api.alerts-test.s.uw.edu/v1/keepalive/d0ce4005db4cf3c4d6a77a8eaf9619fc/WatchDog
+
+curl -v -XGET -H "Authorization: Bearer a35546df241140a687200bec8c6812c0" https://api.alerts-test.s.uw.edu/v1/keepalive/d0ce4005db4cf3c4d6a77a8eaf9619fc/WatchDog

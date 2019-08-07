@@ -21,10 +21,10 @@ import signal
 
 # Some logging systems like stackdriver distinguish between stdout and stderr
 def loginfo(msg):
-    print('am2alertapi info: {0}\n'.format(msg), file=sys.stdout, flush=True )
+    print('am2alertapi info: {0}'.format(msg), file=sys.stdout, flush=True )
 
 def logerror(msg):
-    print('am2alertapi error: {0}\n'.format(msg), file=sys.stderr, flush=True)
+    print('am2alertapi error: {0}'.format(msg), file=sys.stderr, flush=True)
 
 def cleanexit(signum, frame):
     loginfo('shutting down')

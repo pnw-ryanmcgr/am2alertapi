@@ -59,7 +59,7 @@ loginfo('config keepalive_endpoint="{0}"'.format(keepalive_endpoint))
 loginfo('config token="{0}"'.format("*" * len(token)))
 loginfo('config org="{0}"'.format(ci_organization))
 
-app = Flask(__name__)
+server = Flask(__name__)
 
 def translate(amalert):
     results = []
@@ -96,7 +96,7 @@ def translate(amalert):
             if alert['labels'].get('watchdog_timeout'):
                 result['timeout'] = alert['labels']['watchdog_timeout']
 
-            results.append(result)
+            results.serverend(result)
 
     except LookupError as e:
         logerror("Alert input missing required labels/annotations/attributes: {}".format(e))
@@ -105,7 +105,7 @@ def translate(amalert):
     return results
 
 
-@app.route('/', methods=['POST'])
+@server.route('/', methods=['POST'])
 def alert():
     """Submit posted alertmanager alerts to UW alertAPI"""
     headers = {'Authorization': 'Bearer {0}'.format(token)}
@@ -122,7 +122,7 @@ def alert():
     return Response(status=api_response.status_code)
 
 
-@app.route('/watchdog', methods=['POST'])
+@server.route('/watchdog', methods=['POST'])
 def watchdog():
     """A watchdog using UW alertAPI keepalive.
 
@@ -146,7 +146,7 @@ def watchdog():
     return Response(status=api_response.status_code)
 
 
-@app.route('/healthz')
+@server.route('/healthz')
 def healthz():
     """Return a 200 illustrating responsiveness."""
     return Response(status=200)

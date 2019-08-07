@@ -11,4 +11,4 @@ RUN pip install -r /app/requirements.txt
 ADD am2alertapi.py /app/am2alertapi.py
 ENV FLASK_APP=/app/am2alertapi.py
 
-CMD gunicorn --worker-class eventlet --bind :3080 am2alertapi:app
+CMD gunicorn --bind :3080 am2alertapi:server

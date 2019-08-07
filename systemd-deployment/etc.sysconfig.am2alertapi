@@ -1,0 +1,6 @@
+# am2alertapi is configured by ENV
+#
+# Required options
+ALERTAPI_TOKEN="YOUR TOKEN"
+ALERTAPI_URL="https://api.alerts.s.uw.edu"
+ALERT_ORGANIZATION="UW-IT"

@@ -7,7 +7,6 @@
 #  ALERTAPI_TOKEN - token for AlertAPI access
 #  ALERTAPI_URL - URL for AlertAPI, not including path
 #  ALERT_ORGANIZATION - Service Now Organization Name
-#  BIND_ADDR - Optional. 0.0.0.0 is default 
 
 from flask import Flask, Response, request, abort, jsonify
 import json
@@ -53,9 +52,6 @@ token = os.environ['ALERTAPI_TOKEN']
 api_url = os.environ['ALERTAPI_URL'].rstrip('/')
 alert_endpoint = api_url + '/v1/alert'
 keepalive_endpoint = api_url + '/v1/keepalive'
-bindto = ''
-if 'BIND_ADDR' in os.environ:
-    bindto = os.environ['BIND_ADDR']
 
 loginfo('config url="{0}"'.format(api_url))
 loginfo('config alert_endpoint="{0}"'.format(alert_endpoint))

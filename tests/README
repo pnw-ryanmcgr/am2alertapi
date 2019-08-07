@@ -1,3 +1,4 @@
+# These are some test cases
 
 # heath check
 curl -vv -XGET http://localhost:5000/healthz
@@ -24,6 +25,6 @@ curl -vv -H "Content-Type: application/json" --data "@alertmanager-alert-watchdo
 returns 202, will create INC after timeout
 
 # Clear keepalive with
-curl -v -XDELETE -H "Authorization: Bearer a35546df241140a687200bec8c6812c0" https://api.alerts-test.s.uw.edu/v1/keepalive/d0ce4005db4cf3c4d6a77a8eaf9619fc/WatchDog
+curl -v -XDELETE -H "Authorization: Bearer YOURTOKEN" https://api.alerts-test.s.uw.edu/v1/keepalive/d0ce4005db4cf3c4d6a77a8eaf9619fc/WatchDog
 
-curl -v -XGET -H "Authorization: Bearer a35546df241140a687200bec8c6812c0" https://api.alerts-test.s.uw.edu/v1/keepalive/d0ce4005db4cf3c4d6a77a8eaf9619fc/WatchDog
+curl -v -XGET -H "Authorization: Bearer YOURTOKEN" https://api.alerts-test.s.uw.edu/v1/keepalive/d0ce4005db4cf3c4d6a77a8eaf9619fc/WatchDog

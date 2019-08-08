@@ -1,27 +1,27 @@
 # These are some test cases
 
 # heath check
-curl -vv -XGET http://localhost:5000/healthz
+curl -vv -XGET http://localhost:3080/healthz
 returns 200
 
 # Normal firing
-curl -vv -H "Content-Type: application/json" --data "@alertmanager-alert-firing.json" -XPOST http://localhost:5000/
+curl -vv -H "Content-Type: application/json" --data "@alertmanager-alert-firing.json" -XPOST http://localhost:3080/
 returns 202 and submits to alertapi
 
 # Normal clearing
-curl -vv -H "Content-Type: application/json" --data "@alertmanager-alert-ok.json" -XPOST http://localhost:5000/
+curl -vv -H "Content-Type: application/json" --data "@alertmanager-alert-ok.json" -XPOST http://localhost:3080/
 returns 202 and submits to alertapi
 
 # Malformed json
-curl -vv -H "Content-Type: application/json" --data "@alertmanager-alert-bad-json.json" -XPOST http://localhost:5000/
+curl -vv -H "Content-Type: application/json" --data "@alertmanager-alert-bad-json.json" -XPOST http://localhost:3080/
 returns 400 
 
 # Missing attributes
-curl -vv -H "Content-Type: application/json" --data "@alertmanager-alert-bad-label.json" -XPOST http://localhost:5000/
+curl -vv -H "Content-Type: application/json" --data "@alertmanager-alert-bad-label.json" -XPOST http://localhost:3080/
 returns 406
 
 # Watchdog (will create INC after timeout)
-curl -vv -H "Content-Type: application/json" --data "@alertmanager-alert-watchdog.json" -XPOST http://localhost:5000/watchdog
+curl -vv -H "Content-Type: application/json" --data "@alertmanager-alert-watchdog.json" -XPOST http://localhost:3080/watchdog
 returns 202, will create INC after timeout
 
 # Clear keepalive with

@@ -1,11 +1,13 @@
-# SOURCE this to run locally
+# SOURCE this to run locally on your dev machine
 
+virtualenv -p python3 `pwd`/env
 export VIRTUAL_ENV=`pwd`/env
 export PATH=`pwd`/env/bin:$PATH
 # mci test token
-export ALERTAPI_TOKEN="YOUR TEST TOKEN"
+export ALERTAPI_TOKEN=YOUR TOKEN
 export ALERTAPI_URL=https://api.alerts-test.s.uw.edu
 export ALERT_ORGANIZATION="UW-IT"
 
-pip install -r requirements.txt
-gunicorn --bind 127.0.0.1:3080 am2alertapi:server
+pip install -r ../requirements.txt
+ln -s ../am2alertapi.py
+gunicorn --bind 127.0.0.1:3080 -t 62 am2alertapi:server

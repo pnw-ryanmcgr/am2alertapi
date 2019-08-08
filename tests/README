@@ -9,7 +9,7 @@ curl -vv -H "Content-Type: application/json" --data "@alertmanager-alert-firing.
 returns 202 and submits to alertapi
 
 # Normal clearing
-curl -vv -H "Content-Type: application/json" --data "@alertmanager-alert-ok.json" -XPOST http://localhost:3080/
+    curl -vv -H "Content-Type: application/json" --data "@alertmanager-alert-ok.json" -XPOST http://localhost:3080/
 returns 202 and submits to alertapi
 
 # Malformed json

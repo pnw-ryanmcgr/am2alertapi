@@ -96,7 +96,7 @@ def translate(amalert):
             if alert['labels'].get('watchdog_timeout'):
                 result['timeout'] = alert['labels']['watchdog_timeout']
 
-            results.serverend(result)
+            results.append(result)
 
     except LookupError as e:
         logerror("Alert input missing required labels/annotations/attributes: {}".format(e))
@@ -115,9 +115,17 @@ def alert():
     for alert in alerts:
         json_alert = json.dumps(alert)
         time.sleep(random.uniform(1,10000)/1000)
-        api_response = requests.post(alert_endpoint, headers=headers, data=json_alert)
-        loginfo('alert {}:{} urgency {} return_code {}'.format(alert['ci']['name'], alert[
-                    'component']['name'], alert['urgency'], api_response.status_code))
+        try:
+            api_response = requests.post(alert_endpoint, headers=headers, data=json_alert, timeout=10)
+        except requests.exceptions.Timeout:
+            logerror('timeout with alertAPI')
+            abort(500, description="timeout with alertapi")
+        except ConnectionError:
+            logerror('unable to connect with alertAPI')
+            abort(500, description="connect error with alertapi")
+        else:
+            loginfo('alert {}:{} urgency {} return_code {}'.format(alert['ci']['name'], 
+                alert['component']['name'], alert['urgency'], api_response.status_code))
 
     return Response(status=api_response.status_code)
 
@@ -139,9 +147,17 @@ def watchdog():
         if not alert.get('timeout'):
             alert['timeout'] = 5
         json_alert = json.dumps(alert)
-        api_response = requests.post(keepalive_endpoint, headers=headers, data=json_alert)
-        loginfo('keepalive {}:{} urgency {} timeout {} return_code {}'.format(alert['ci']['name'], alert[
-                    'component']['name'], alert['urgency'], alert['timeout'], api_response.status_code))
+        try:
+            api_response = requests.post(keepalive_endpoint, headers=headers, data=json_alert, timeout=10)
+        except requests.exceptions.Timeout:
+            logerror('timeout with alertAPI')
+            abort(500, description="timeout with alertapi")
+        except ConnectionError:
+            logerror('connect error with alertAPI')
+            abort(500, description="connect error with alertapi")
+        else:
+            loginfo('keepalive {}:{} urgency {} timeout {} return_code {}'.format(alert['ci']['name'], 
+                alert['component']['name'], alert['urgency'], alert['timeout'], api_response.status_code))
 
     return Response(status=api_response.status_code)
 

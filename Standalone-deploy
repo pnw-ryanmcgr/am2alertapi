@@ -1,0 +1,12 @@
+#!/bin/bash
+# This is unlikely to be usable exactly as is
+
+INSTALL=/opt/am2alertapi
+git clone git@github.com:UWIT-UE/am2alertapi.git $INSTALL
+virtualenv3 $INSTALL
+$INSTALL/bin/pip install -r requirements.txt
+cp $INSTALL/systemd-deployment/etc.systemd.system.am2alertapi.service /etc/systemd/system/am2alertapi.service
+cp $INSTALL/systemd-deployment/etc.sysconfig.am2alertapi /etc/sysconfig/am2alertapi
+echo "Set the TOKEN in /etc/sysconfig/am2alertapi"
+systemctl daemon-reload
+systemctl start am2alertapi.service

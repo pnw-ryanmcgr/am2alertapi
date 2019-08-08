@@ -1,6 +1,6 @@
 FROM gcr.io/google-appengine/python
 
-RUN virtualenv /env
+RUN virtualenv -p python3.7 /env
 
 ENV VIRTUAL_ENV /env
 ENV PATH /env/bin:$PATH
@@ -8,6 +8,7 @@ ENV PATH /env/bin:$PATH
 ADD requirements.txt /app/requirements.txt
 RUN pip install -r /app/requirements.txt
 
-ADD am2alertapi /app/am2alertapi
+ADD am2alertapi.py /app/am2alertapi.py
+ENV FLASK_APP=/app/am2alertapi.py
 
-CMD [ "python", "/app/am2alertapi" ]
+CMD gunicorn --bind :3080 am2alertapi:server

@@ -1,0 +1,19 @@
+[Unit]
+Description=Alertmanager to AlertAPI adapter
+After=network.target
+
+[Service]
+# Required am2alertapi options are provided by environment
+EnvironmentFile=/etc/sysconfig/am2alertapi
+ExecStart=/opt/am2alertapi/bin/gunicorn --pid /run/am2alertapi/pid --bind 127.0.0.1:3080 am2alertapi:server
+PIDFile=/run/am2alertapi/pid
+User=nobody
+Group=nobody
+RuntimeDirectory=am2alertapi
+WorkingDirectory=/opt/am2alertapi
+Restart=on-failure
+RestartSec=30
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

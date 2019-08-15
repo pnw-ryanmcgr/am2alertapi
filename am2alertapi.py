@@ -74,6 +74,8 @@ def translate(amalert):
             # Heirarchy of ci selection
             if alert['labels'].get('hostname'):
                 result['ci']['name'] = alert['labels']['hostname']
+            if alert['labels'].get('cluster'):
+                result['ci']['name'] = alert['labels']['cluster']
             if alert['labels'].get('ci_name'):
                 result['ci']['name'] = alert['labels']['ci_name']
             if alert['labels'].get('ci_sysid'):

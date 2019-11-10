@@ -1,15 +1,15 @@
-FROM gcr.io/google-appengine/python
+FROM python:3.7-slim
 
-RUN virtualenv -p python3.7 /env
+ENV PATH="/venv/bin:$PATH"
+RUN python3 -m venv /venv
 
-ENV VIRTUAL_ENV /env
-ENV PATH /env/bin:$PATH
-
-ADD requirements.txt /app/requirements.txt
+COPY requirements.txt /app/requirements.txt
 RUN pip install -r /app/requirements.txt
+COPY am2alertapi.py /app/am2alertapi.py
 
-ADD gunicorn.conf  /app/gunicorn.conf
-ADD am2alertapi.py /app/am2alertapi.py
-ENV FLASK_APP=/app/am2alertapi.py
+ENTRYPOINT ["gunicorn", "app.am2alertapi:server", "-b", ":3080"]
+CMD ["--worker-class=eventlet", "--log-level", "INFO"]
 
-CMD gunicorn --config /app/gunicorn.conf am2alertapi:server
+# With Apache style request logging
+#CMD ["--worker-class=eventlet", "--access-logfile", "-", "--log-level", "INFO"]
+

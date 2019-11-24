@@ -9,6 +9,7 @@
 #  ALERT_ORGANIZATION - Service Now Organization Name
 
 from flask import Flask, Response, request, abort, jsonify
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, Summary
 import json
 import requests
 import socket
@@ -59,6 +60,7 @@ loginfo('config keepalive_endpoint="{0}"'.format(keepalive_endpoint))
 loginfo('config token="{0}"'.format("*" * len(token)))
 loginfo('config org="{0}"'.format(ci_organization))
 
+REQUEST_TIME = Summary('request_processing_seconds', 'Time handling request')
 server = Flask(__name__)
 
 def translate(amalert):
@@ -108,6 +110,7 @@ def translate(amalert):
 
 
 @server.route('/', methods=['POST'])
+@REQUEST_TIME.time()
 def alert():
     """Submit posted alertmanager alerts to UW alertAPI"""
     headers = {'Authorization': 'Bearer {0}'.format(token)}
@@ -133,6 +136,7 @@ def alert():
 
 
 @server.route('/watchdog', methods=['POST'])
+@REQUEST_TIME.time()
 def watchdog():
     """A watchdog using UW alertAPI keepalive.
 
@@ -168,3 +172,9 @@ def watchdog():
 def healthz():
     """Return a 200 illustrating responsiveness."""
     return Response(status=200)
+
+@server.route('metrics')
+@REQUEST_TIME.time()
+def metrics():
+    """Return Prometheus metrics.""" 
+    return Reponse(prometheus_client.generate_latest(), mimetype=CONTENT_TYPE_LATEST)

@@ -8,6 +8,7 @@ export ALERTAPI_TOKEN=YOUR TOKEN
 export ALERTAPI_URL=https://api.alerts-test.s.uw.edu
 export ALERT_ORGANIZATION="UW-IT"
 
+cd env
 pip install -r ../requirements.txt
 ln -s ../am2alertapi.py
 gunicorn --bind 127.0.0.1:3080 -t 62 am2alertapi:server

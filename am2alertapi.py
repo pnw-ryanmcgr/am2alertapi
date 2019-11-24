@@ -60,7 +60,7 @@ loginfo('config keepalive_endpoint="{0}"'.format(keepalive_endpoint))
 loginfo('config token="{0}"'.format("*" * len(token)))
 loginfo('config org="{0}"'.format(ci_organization))
 
-REQUEST_TIME = Summary('request_processing_seconds', 'Time handling request')
+REQUEST_TIME = Summary('am2alertapi_request', 'Time handling request')
 server = Flask(__name__)
 
 def translate(amalert):
@@ -173,8 +173,8 @@ def healthz():
     """Return a 200 illustrating responsiveness."""
     return Response(status=200)
 
-@server.route('metrics')
+@server.route('/metrics')
 @REQUEST_TIME.time()
 def metrics():
     """Return Prometheus metrics.""" 
-    return Reponse(prometheus_client.generate_latest(), mimetype=CONTENT_TYPE_LATEST)
+    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)

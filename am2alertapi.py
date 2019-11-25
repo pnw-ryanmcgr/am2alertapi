@@ -9,7 +9,7 @@
 #  ALERT_ORGANIZATION - Service Now Organization Name
 
 from flask import Flask, Response, request, abort, jsonify
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, Summary
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, Counter
 import json
 import requests
 import socket
@@ -60,8 +60,8 @@ loginfo('config keepalive_endpoint="{0}"'.format(keepalive_endpoint))
 loginfo('config token="{0}"'.format("*" * len(token)))
 loginfo('config org="{0}"'.format(ci_organization))
 
-REQUEST_TIME = Summary('am2alertapi_request', 'Time handling request')
 server = Flask(__name__)
+response_count = Counter('am2alertapi_responses_total', 'HTTP responses', ['endpoint', 'status_code'])
 
 def translate(amalert):
     results = []
@@ -104,13 +104,14 @@ def translate(amalert):
 
     except LookupError as e:
         logerror("Alert input missing required labels/annotations/attributes: {}".format(e))
+        response_count.labels(endpoint='/', status_code='406').inc()
         abort(406, description="Missing required labels/annotations/attributes {}".format(e))
 
     return results
 
 
 @server.route('/', methods=['POST'])
-@REQUEST_TIME.time()
+#@request_time.time()
 def alert():
     """Submit posted alertmanager alerts to UW alertAPI"""
     headers = {'Authorization': 'Bearer {0}'.format(token)}
@@ -124,19 +125,21 @@ def alert():
             api_response = requests.post(alert_endpoint, headers=headers, data=json_alert, timeout=10)
         except requests.exceptions.Timeout:
             logerror('timeout with alertAPI')
+            response_count.labels(endpoint='/', status_code='500').inc()
             abort(500, description="timeout with alertapi")
         except ConnectionError:
             logerror('unable to connect with alertAPI')
+            response_count.labels(endpoint='/', status_code='500').inc()
             abort(500, description="connect error with alertapi")
         else:
             loginfo('alert {}:{} urgency {} return_code {}'.format(alert['ci']['name'], 
                 alert['component']['name'], alert['urgency'], api_response.status_code))
 
+    response_count.labels(endpoint='/', status_code=str(api_response.status_code)).inc()
     return Response(status=api_response.status_code)
 
 
 @server.route('/watchdog', methods=['POST'])
-@REQUEST_TIME.time()
 def watchdog():
     """A watchdog using UW alertAPI keepalive.
 
@@ -157,24 +160,29 @@ def watchdog():
             api_response = requests.post(keepalive_endpoint, headers=headers, data=json_alert, timeout=10)
         except requests.exceptions.Timeout:
             logerror('timeout with alertAPI')
+            response_count.labels(endpoint='/watchdog', status_code='500').inc()
             abort(500, description="timeout with alertapi")
         except ConnectionError:
             logerror('connect error with alertAPI')
+            response_count.labels(endpoint='/watchdog', status_code='500').inc()
             abort(500, description="connect error with alertapi")
         else:
             loginfo('keepalive {}:{} urgency {} timeout {} return_code {}'.format(alert['ci']['name'], 
                 alert['component']['name'], alert['urgency'], alert['timeout'], api_response.status_code))
 
+    response_count.labels(endpoint='/watchdog', status_code=str(api_response.status_code)).inc()
     return Response(status=api_response.status_code)
 
 
 @server.route('/healthz')
 def healthz():
     """Return a 200 illustrating responsiveness."""
+    response_count.labels(endpoint='/healthz', status_code=api_response.status_code).inc()
     return Response(status=200)
 
 @server.route('/metrics')
-@REQUEST_TIME.time()
 def metrics():
     """Return Prometheus metrics.""" 
+    response_count.labels(endpoint='/metrics', status_code='200').inc()
     return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
+

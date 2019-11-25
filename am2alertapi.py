@@ -111,7 +111,6 @@ def translate(amalert):
 
 
 @server.route('/', methods=['POST'])
-#@request_time.time()
 def alert():
     """Submit posted alertmanager alerts to UW alertAPI"""
     headers = {'Authorization': 'Bearer {0}'.format(token)}

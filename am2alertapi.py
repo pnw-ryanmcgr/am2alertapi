@@ -176,7 +176,7 @@ def watchdog():
 @server.route('/healthz')
 def healthz():
     """Return a 200 illustrating responsiveness."""
-    response_count.labels(endpoint='/healthz', status_code=api_response.status_code).inc()
+    response_count.labels(endpoint='/healthz', status_code='200').inc()
     return Response(status=200)
 
 @server.route('/metrics')

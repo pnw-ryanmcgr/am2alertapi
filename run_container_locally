@@ -1,0 +1,7 @@
+#put environment variables into testing.env
+#
+#ALERT_ORGANIZATION=UW-IT
+#ALERTAPI_URL=https://api.alerts-test.s.uw.edu
+#ALERTAPI_TOKEN=YOURTOKEN
+
+docker run --env-file=testing.env gcr.io/uwit-mci-svcs/am2alertapi:dev-202001121710

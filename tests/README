@@ -1,5 +1,12 @@
 # These are some test cases
 
+# vegeta load test example
+download vegeta
+put ok json in "ok.json"
+echo "POST http://am2alertapi-test.mci-monitoring:80/" | ./vegeta attack -body=ok.json -rate=1/s > results.gob
+./vegeta report results.*
+
+
 # heath check
 curl -vv -XGET http://localhost:3080/healthz
 returns 200
@@ -28,3 +35,18 @@ returns 202, will create INC after timeout
 curl -v -XDELETE -H "Authorization: Bearer YOURTOKEN" https://api.alerts-test.s.uw.edu/v1/keepalive/d0ce4005db4cf3c4d6a77a8eaf9619fc/WatchDog
 
 curl -v -XGET -H "Authorization: Bearer YOURTOKEN" https://api.alerts-test.s.uw.edu/v1/keepalive/d0ce4005db4cf3c4d6a77a8eaf9619fc/WatchDog
+
+
+Here is an example of load testing using vegeta and the same test bodies:
+With workers=5 and rate 1/s then it will use 5 connections and maintain 1/s across all of them. Otherwise it will use only one connection.
+
+[root@prospero tests]# echo "POST http://127.0.0.1:3080/" | ~erich/bin/vegeta attack -body=alertmanager-alert-ok.json -duration=60s workers=5 -rate=1/s > results-p3.6-e20.gob
+[root@prospero tests]# ~erich/bin/vegeta report results-p3.6-e20.gob
+Requests [total, rate, throughput] 60, 1.02, 0.93
+Duration [total, attack, wait] 1m4.654354675s, 58.99999024s, 5.654364435s
+Latencies [mean, 50, 95, 99, max] 5.241673923s, 5.249762151s, 9.38993741s, 9.97807986s, 9.989372664s
+Bytes In [total, mean] 0, 0.00
+Bytes Out [total, mean] 63540, 1059.00
+Success [ratio] 100.00%
+Status Codes [code:count] 202:60
+Error Set:

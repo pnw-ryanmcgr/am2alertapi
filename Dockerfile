@@ -8,7 +8,7 @@ RUN pip install -r /app/requirements.txt
 COPY am2alertapi.py /app/am2alertapi.py
 
 ENTRYPOINT ["gunicorn", "app.am2alertapi:server", "-b", ":3080", \
-            "--worker-class=eventlet", "--log-level", "INFO"]
+            "--worker-class=eventlet", "--workers=3", "--log-level", "INFO"]
 
 # With Apache style request logging
 #ENTRYPOINT ["gunicorn", "app.am2alertapi:server", "-b", ":3080" \

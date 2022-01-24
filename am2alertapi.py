@@ -9,7 +9,8 @@
 #  ALERT_ORGANIZATION - Service Now Organization Name
 
 from flask import Flask, Response, request, abort, jsonify
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, Counter
+from prometheus_client import multiprocess
+from prometheus_client import generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST, Counter
 import json
 import requests
 import socket
@@ -61,7 +62,10 @@ loginfo('config token="{0}"'.format("*" * len(token)))
 loginfo('config org="{0}"'.format(ci_organization))
 
 server = Flask(__name__)
-response_count = Counter('am2alertapi_responses_total', 'HTTP responses', ['api_endpoint', 'status_code'])
+
+registry = CollectorRegistry()
+multiprocess.MultiProcessCollector(registry)
+response_count = Counter('am2alertapi_responses_total', 'HTTP responses', ['api_endpoint', 'status_code'], registry=registry)
 
 def translate(amalert):
     results = []
@@ -183,5 +187,5 @@ def healthz():
 def metrics():
     """Return Prometheus metrics.""" 
     response_count.labels(api_endpoint='/metrics', status_code='200').inc()
-    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
+    return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST)
 

@@ -63,9 +63,9 @@ loginfo('config org="{0}"'.format(ci_organization))
 
 server = Flask(__name__)
 
+response_count = Counter('am2alertapi_responses_total', 'HTTP responses', ['api_endpoint', 'status_code'])
 registry = CollectorRegistry()
 multiprocess.MultiProcessCollector(registry)
-response_count = Counter('am2alertapi_responses_total', 'HTTP responses', ['api_endpoint', 'status_code'], registry=registry)
 
 def translate(amalert):
     results = []

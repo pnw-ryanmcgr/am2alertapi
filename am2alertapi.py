@@ -9,7 +9,8 @@
 #  ALERT_ORGANIZATION - Service Now Organization Name
 
 from flask import Flask, Response, request, abort, jsonify
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, Counter
+from prometheus_client import multiprocess
+from prometheus_client import generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST, Counter
 import json
 import requests
 import socket
@@ -61,7 +62,10 @@ loginfo('config token="{0}"'.format("*" * len(token)))
 loginfo('config org="{0}"'.format(ci_organization))
 
 server = Flask(__name__)
+
 response_count = Counter('am2alertapi_responses_total', 'HTTP responses', ['api_endpoint', 'status_code'])
+registry = CollectorRegistry()
+multiprocess.MultiProcessCollector(registry)
 
 def translate(amalert):
     results = []
@@ -158,13 +162,13 @@ def watchdog():
         try:
             api_response = requests.post(keepalive_endpoint, headers=headers, data=json_alert, timeout=10)
         except requests.exceptions.Timeout:
-            logerror('timeout with alertAPI')
+            logerror('timeout with alertAPI keepalive')
             response_count.labels(api_endpoint='/watchdog', status_code='500').inc()
-            abort(500, description="timeout with alertapi")
+            abort(500, description="timeout with alertapi keepalive")
         except ConnectionError:
-            logerror('connect error with alertAPI')
+            logerror('connect error with alertAPI keepalive')
             response_count.labels(api_endpoint='/watchdog', status_code='500').inc()
-            abort(500, description="connect error with alertapi")
+            abort(500, description="connect error with alertapi keepalive")
         else:
             loginfo('keepalive {}:{} urgency {} timeout {} return_code {}'.format(alert['ci']['name'], 
                 alert['component']['name'], alert['urgency'], alert['timeout'], api_response.status_code))
@@ -183,5 +187,5 @@ def healthz():
 def metrics():
     """Return Prometheus metrics.""" 
     response_count.labels(api_endpoint='/metrics', status_code='200').inc()
-    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
+    return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST)
 

@@ -162,13 +162,13 @@ def watchdog():
         try:
             api_response = requests.post(keepalive_endpoint, headers=headers, data=json_alert, timeout=10)
         except requests.exceptions.Timeout:
-            logerror('timeout with alertAPI')
+            logerror('timeout with alertAPI keepalive')
             response_count.labels(api_endpoint='/watchdog', status_code='500').inc()
-            abort(500, description="timeout with alertapi")
+            abort(500, description="timeout with alertapi keepalive")
         except ConnectionError:
-            logerror('connect error with alertAPI')
+            logerror('connect error with alertAPI keepalive')
             response_count.labels(api_endpoint='/watchdog', status_code='500').inc()
-            abort(500, description="connect error with alertapi")
+            abort(500, description="connect error with alertapi keepalive")
         else:
             loginfo('keepalive {}:{} urgency {} timeout {} return_code {}'.format(alert['ci']['name'], 
                 alert['component']['name'], alert['urgency'], alert['timeout'], api_response.status_code))

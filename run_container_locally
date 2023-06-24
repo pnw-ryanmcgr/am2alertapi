@@ -4,4 +4,4 @@
 #ALERTAPI_URL=https://api.alerts-test.s.uw.edu
 #ALERTAPI_TOKEN=YOURTOKEN
 
-docker run --env-file=testing.env gcr.io/uwit-mci-svcs/am2alertapi:dev-202001121710
+podman run --env-file=testing.env --network=host us-docker.pkg.dev/uwit-mci-ueteam/containers/am2alertapi:dev-erich-quart-d02b8d4-1687569445

@@ -13,7 +13,7 @@ from prometheus_client import multiprocess
 from prometheus_client import generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST, Counter
 import asyncio
 import json
-import requests
+import httpx
 import socket
 import random
 import os
@@ -125,8 +125,9 @@ async def alert():
         json_alert = json.dumps(alert)
         await asyncio.sleep(random.uniform(1,10000)/1000)
         try:
-            api_response = await requests.post(alert_endpoint, headers=headers, data=json_alert, timeout=10)
-        except requests.exceptions.Timeout:
+            async with httpx.AsyncClient() as api_client:
+                api_response = await api_client.post(alert_endpoint, headers=headers, data=json_alert, timeout=10)
+        except httpx.TimeoutException:
             logerror('timeout with alertAPI')
             response_count.labels(api_endpoint='/', status_code='500').inc()
             abort(500, description="timeout with alertapi")
@@ -139,7 +140,7 @@ async def alert():
                 alert['component']['name'], alert['urgency'], api_response.status_code))
 
     response_count.labels(api_endpoint='/', status_code=str(api_response.status_code)).inc()
-    return await Response(status=api_response.status_code)
+    return Response(status=api_response.status_code)
 
 
 @server.route('/watchdog', methods=['POST'])
@@ -160,8 +161,9 @@ async def watchdog():
             alert['timeout'] = 5
         json_alert = json.dumps(alert)
         try:
-            api_response = await requests.post(keepalive_endpoint, headers=headers, data=json_alert, timeout=10)
-        except requests.exceptions.Timeout:
+            async with httpx.AsyncClient() as api_client:
+                api_response = await api_client.post(keepalive_endpoint, headers=headers, data=json_alert, timeout=10)
+        except httpx.TimeoutException:
             logerror('timeout with alertAPI keepalive')
             response_count.labels(api_endpoint='/watchdog', status_code='500').inc()
             abort(500, description="timeout with alertapi keepalive")
@@ -174,18 +176,18 @@ async def watchdog():
                 alert['component']['name'], alert['urgency'], alert['timeout'], api_response.status_code))
 
     response_count.labels(api_endpoint='/watchdog', status_code=str(api_response.status_code)).inc()
-    return await Response(status=api_response.status_code)
+    return Response(status=api_response.status_code)
 
 
 @server.route('/healthz')
 async def healthz():
     """Return a 200 illustrating responsiveness."""
     response_count.labels(api_endpoint='/healthz', status_code='200').inc()
-    return await Response(status=200)
+    return Response(status=200)
 
 @server.route('/metrics')
 async def metrics():
     """Return Prometheus metrics."""
     response_count.labels(api_endpoint='/metrics', status_code='200').inc()
-    return await Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST)
+    return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST)
 

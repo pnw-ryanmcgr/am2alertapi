@@ -4,7 +4,7 @@ export PROMETHEUS_MULTIPROC_DIR=/tmp/metric-multi
 rm -rf /tmp/metric-multi; mkdir -p /tmp/metric-multi
 
 if [ ! -d /app ]; then
-  virtualenv -p python3 `pwd`/app
+  python3 -m venv `pwd`/app
   export VIRTUAL_ENV=`pwd`/app
   export PATH=`pwd`/app/bin:$PATH
 fi
@@ -17,8 +17,7 @@ export ALERT_ORGANIZATION="UW-IT"
 cd app
 pip install --upgrade pip
 pip install -r ../requirements.txt
-ln -s ../gunicorn.conf.py
 ln -sf ../am2alertapi.py
 cd ..
-gunicorn app.am2alertapi:server -b 127.0.0.1:3080 -c app/gunicorn.conf.py --worker-class=eventlet --workers=3 --log-level DEBUG
+hypercorn asgi:app.am2alertapi:server -b 127.0.0.1:3080 --worker-class=asyncio --workers=2 --access-logfile - --log-level DEBUG
 
